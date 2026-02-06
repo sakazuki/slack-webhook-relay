@@ -18,7 +18,7 @@ data "oci_identity_compartment" "target" {
 }
 
 # Functions Application
-resource "oci_functions_application" "webhook_relay_app" {
+resource "oci_functions_application" "slack_webhook_relay_app" {
   compartment_id = var.compartment_id
   display_name   = var.application_name
   subnet_ids     = var.subnet_ids
@@ -31,7 +31,7 @@ resource "oci_functions_application" "webhook_relay_app" {
 }
 
 # Container Registry用のリポジトリ
-resource "oci_artifacts_container_repository" "webhook_relay_repo" {
+resource "oci_artifacts_container_repository" "slack_webhook_relay_repo" {
   compartment_id = var.compartment_id
   display_name   = "${var.function_name}-repo"
   is_public      = false
@@ -40,10 +40,10 @@ resource "oci_artifacts_container_repository" "webhook_relay_repo" {
 }
 
 # Functions Function
-resource "oci_functions_function" "webhook_relay" {
-  application_id = oci_functions_application.webhook_relay_app.id
+resource "oci_functions_function" "slack_webhook_relay" {
+  application_id = oci_functions_application.slack_webhook_relay_app.id
   display_name   = var.function_name
-  image          = "${var.oci_region}.ocir.io/${var.tenancy_namespace}/${oci_artifacts_container_repository.webhook_relay_repo.display_name}:${var.function_version}"
+  image          = "${var.oci_region}.ocir.io/${var.tenancy_namespace}/${oci_artifacts_container_repository.slack_webhook_relay_repo.display_name}:${var.function_version}"
   memory_in_mbs  = var.function_memory_mb
   timeout_in_seconds = var.function_timeout
 
@@ -55,7 +55,7 @@ resource "oci_functions_function" "webhook_relay" {
 }
 
 # API Gateway
-resource "oci_apigateway_gateway" "webhook_gateway" {
+resource "oci_apigateway_gateway" "slack_webhook_gateway" {
   compartment_id = var.compartment_id
   endpoint_type  = "PUBLIC"
   subnet_id      = var.gateway_subnet_id
@@ -65,9 +65,9 @@ resource "oci_apigateway_gateway" "webhook_gateway" {
 }
 
 # API Deployment
-resource "oci_apigateway_deployment" "webhook_deployment" {
+resource "oci_apigateway_deployment" "slack_webhook_deployment" {
   compartment_id = var.compartment_id
-  gateway_id     = oci_apigateway_gateway.webhook_gateway.id
+  gateway_id     = oci_apigateway_gateway.slack_webhook_gateway.id
   path_prefix    = "/v1"
   display_name   = "${var.function_name}-deployment"
 
@@ -88,7 +88,7 @@ resource "oci_apigateway_deployment" "webhook_deployment" {
 
       backend {
         type        = "ORACLE_FUNCTIONS_BACKEND"
-        function_id = oci_functions_function.webhook_relay.id
+        function_id = oci_functions_function.slack_webhook_relay.id
       }
 
       request_policies {
@@ -117,7 +117,7 @@ resource "oci_apigateway_deployment" "webhook_deployment" {
 }
 
 # Logging - Application Logs
-resource "oci_logging_log_group" "webhook_log_group" {
+resource "oci_logging_log_group" "slack_webhook_log_group" {
   compartment_id = var.compartment_id
   display_name   = "${var.function_name}-log-group"
 
@@ -126,13 +126,13 @@ resource "oci_logging_log_group" "webhook_log_group" {
 
 resource "oci_logging_log" "function_invoke_logs" {
   display_name = "${var.function_name}-invoke-logs"
-  log_group_id = oci_logging_log_group.webhook_log_group.id
+  log_group_id = oci_logging_log_group.slack_webhook_log_group.id
   log_type     = "SERVICE"
 
   configuration {
     source {
       category    = "invoke"
-      resource    = oci_functions_application.webhook_relay_app.id
+      resource    = oci_functions_application.slack_webhook_relay_app.id
       service     = "functions"
       source_type = "OCISERVICE"
     }
@@ -149,13 +149,13 @@ resource "oci_logging_log" "function_invoke_logs" {
 # API Gateway Access Logs
 resource "oci_logging_log" "gateway_access_logs" {
   display_name = "${var.function_name}-gateway-access-logs"
-  log_group_id = oci_logging_log_group.webhook_log_group.id
+  log_group_id = oci_logging_log_group.slack_webhook_log_group.id
   log_type     = "SERVICE"
 
   configuration {
     source {
       category    = "access"
-      resource    = oci_apigateway_gateway.webhook_gateway.id
+      resource    = oci_apigateway_gateway.slack_webhook_gateway.id
       service     = "apigateway"
       source_type = "OCISERVICE"
     }
@@ -172,13 +172,13 @@ resource "oci_logging_log" "gateway_access_logs" {
 # API Gateway Execution Logs
 resource "oci_logging_log" "gateway_execution_logs" {
   display_name = "${var.function_name}-gateway-execution-logs"
-  log_group_id = oci_logging_log_group.webhook_log_group.id
+  log_group_id = oci_logging_log_group.slack_webhook_log_group.id
   log_type     = "SERVICE"
 
   configuration {
     source {
       category    = "execution"
-      resource    = oci_apigateway_gateway.webhook_gateway.id
+      resource    = oci_apigateway_gateway.slack_webhook_gateway.id
       service     = "apigateway"
       source_type = "OCISERVICE"
     }

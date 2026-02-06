@@ -1,5 +1,5 @@
 schema_version: 20180708
-name: webhook-relay
+name: slack-webhook-relay
 version: 1.0.0
 runtime: docker
 build_image: node:25-alpine

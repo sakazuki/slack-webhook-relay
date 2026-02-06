@@ -56,8 +56,8 @@ export GATEWAY_SUBNET_ID="ocid1.subnet.oc1..xxxxx"
 ./deploy-oci.sh
 
 # または手動でデプロイ
-docker build -t ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/webhook-relay-repo:latest .
-docker push ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/webhook-relay-repo:latest
+docker build -t ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/slack-webhook-relay-repo:latest .
+docker push ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/slack-webhook-relay-repo:latest
 
 cd terraform/oci
 terraform init
@@ -84,17 +84,19 @@ curl -X POST "https://api.example.com/webhooks?d=https://hooks.slack.com/service
 ### Slackでの表示
 
 **変換前 (通常のJSON送信)**
+
 ```
 {"alert":"High CPU Usage","severity":"warning","host":"web-server-01","cpu_usage":85.3,"timestamp":"2025-02-07T10:30:00Z"}
 ```
 
 **変換後 (このAPIを使用)**
+
 ```yaml
 alert: High CPU Usage
 severity: warning
 host: web-server-01
 cpu_usage: 85.3
-timestamp: '2025-02-07T10:30:00Z'
+timestamp: "2025-02-07T10:30:00Z"
 ```
 
 ### プレーンテキストの送信
@@ -116,9 +118,9 @@ POST /webhooks
 
 ### クエリパラメータ
 
-| パラメータ | 必須 | 説明 | 例 |
-|-----------|------|------|-----|
-| d | ✓ | 送信先のSlack Webhook URL | `https://hooks.slack.com/services/XXX/YYY/ZZZ` |
+| パラメータ | 必須 | 説明                      | 例                                             |
+| ---------- | ---- | ------------------------- | ---------------------------------------------- |
+| d          | ✓    | 送信先のSlack Webhook URL | `https://hooks.slack.com/services/XXX/YYY/ZZZ` |
 
 ### リクエストボディ
 
@@ -129,6 +131,7 @@ POST /webhooks
 ### レスポンス
 
 **成功時 (200 OK)**
+
 ```json
 {
   "message": "Successfully sent to Slack",
@@ -138,6 +141,7 @@ POST /webhooks
 ```
 
 **エラー時 (400 Bad Request)**
+
 ```json
 {
   "error": "Missing required parameter: d (destination webhook URL)"
@@ -150,9 +154,9 @@ POST /webhooks
 
 ```yaml
 receivers:
-  - name: 'slack-webhook-relay'
+  - name: "slack-webhook-relay"
     webhook_configs:
-      - url: 'https://api.example.com/webhooks?d=https://hooks.slack.com/services/XXX/YYY/ZZZ'
+      - url: "https://api.example.com/webhooks?d=https://hooks.slack.com/services/XXX/YYY/ZZZ"
         send_resolved: true
 ```
 
@@ -174,24 +178,24 @@ SNS → Lambda → Webhook Relay → Slack の構成で連携可能
 
 ### AWS Lambda
 
-| 変数名 | デフォルト | 説明 |
-|--------|-----------|------|
-| aws_region | ap-northeast-1 | AWSリージョン |
-| function_name | webhook-relay | Lambda関数名 |
-| lambda_timeout | 30 | タイムアウト(秒) |
-| lambda_memory_size | 256 | メモリサイズ(MB) |
-| log_retention_days | 14 | ログ保持期間(日) |
+| 変数名             | デフォルト          | 説明             |
+| ------------------ | ------------------- | ---------------- |
+| aws_region         | ap-northeast-1      | AWSリージョン    |
+| function_name      | slack-webhook-relay | Lambda関数名     |
+| lambda_timeout     | 30                  | タイムアウト(秒) |
+| lambda_memory_size | 256                 | メモリサイズ(MB) |
+| log_retention_days | 14                  | ログ保持期間(日) |
 
 ### OCI Functions
 
-| 変数名 | デフォルト | 説明 |
-|--------|-----------|------|
-| oci_region | ap-tokyo-1 | OCIリージョン |
-| function_name | webhook-relay | 関数名 |
-| function_timeout | 30 | タイムアウト(秒) |
-| function_memory_mb | 256 | メモリサイズ(MB) |
-| enable_rate_limiting | false | レート制限の有効化 |
-| log_retention_days | 14 | ログ保持期間(日) |
+| 変数名               | デフォルト          | 説明               |
+| -------------------- | ------------------- | ------------------ |
+| oci_region           | ap-tokyo-1          | OCIリージョン      |
+| function_name        | slack-webhook-relay | 関数名             |
+| function_timeout     | 30                  | タイムアウト(秒)   |
+| function_memory_mb   | 256                 | メモリサイズ(MB)   |
+| enable_rate_limiting | false               | レート制限の有効化 |
+| log_retention_days   | 14                  | ログ保持期間(日)   |
 
 ## セキュリティ
 
@@ -203,12 +207,14 @@ SNS → Lambda → Webhook Relay → Slack の構成で連携可能
 ### CORS設定
 
 AWS Lambda Function URLでは、以下のCORS設定を適用:
+
 - POST メソッドのみ許可
 - 必要最小限のヘッダーのみ許可
 
 ### レート制限
 
 OCI:
+
 ```hcl
 variable "enable_rate_limiting" {
   default = true
@@ -232,7 +238,7 @@ AWS Lambda Function URLではネイティブなレート制限機能はありま
 
 ```bash
 # ZIPファイルのサイズを確認
-du -h terraform/aws/webhook-relay.zip
+du -h terraform/aws/slack-webhook-relay.zip
 
 # 依存関係を再インストール
 cd src
@@ -247,15 +253,15 @@ npm install --production
 docker login ${OCI_REGION}.ocir.io
 
 # イメージのビルドとプッシュを再実行
-docker build -t ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/webhook-relay-repo:latest .
-docker push ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/webhook-relay-repo:latest
+docker build -t ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/slack-webhook-relay-repo:latest .
+docker push ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/slack-webhook-relay-repo:latest
 ```
 
 ### Slack送信エラー
 
 ```bash
 # ログの確認 (AWS)
-aws logs tail /aws/lambda/webhook-relay --follow
+aws logs tail /aws/lambda/slack-webhook-relay --follow
 
 # ログの確認 (OCI)
 oci logging-search search-logs \
@@ -286,6 +292,7 @@ MIT
 ## 変更履歴
 
 ### v1.1.0
+
 - **AWS版**: API GatewayからLambda Function URLに変更
   - コスト削減: 約70%削減 ($4.53/月 → $1.03/月)
   - シンプルな構成
@@ -293,6 +300,7 @@ MIT
 - Lambda Function URLとAPI Gatewayの両形式のクエリパラメータに対応
 
 ### v1.0.0
+
 - 初回リリース
 - AWS Lambda + API Gateway対応
 - OCI Functions対応

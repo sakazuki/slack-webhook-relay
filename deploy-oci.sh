@@ -22,7 +22,7 @@ cd ..
 
 # Dockerイメージのビルド
 echo "Building Docker image..."
-IMAGE_TAG="${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/webhook-relay-repo:latest"
+IMAGE_TAG="${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/slack-webhook-relay-repo:latest"
 docker build -t "$IMAGE_TAG" .
 
 # OCIRへのログイン

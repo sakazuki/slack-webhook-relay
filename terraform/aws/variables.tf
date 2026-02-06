@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "function_name" {
   description = "Lambda function name"
   type        = string
-  default     = "webhook-relay"
+  default     = "slack-webhook-relay"
 }
 
 variable "environment" {
@@ -38,7 +38,7 @@ variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)
   default = {
-    Service     = "webhook-relay"
+    Service     = "slack-webhook-relay"
     ManagedBy   = "Terraform"
   }
 }

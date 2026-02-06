@@ -20,7 +20,7 @@ provider "aws" {
 data "archive_file" "lambda_zip" {
   type        = "zip"
   source_dir  = "${path.module}/../../src"
-  output_path = "${path.module}/webhook-relay.zip"
+  output_path = "${path.module}/slack-webhook-relay.zip"
   excludes    = ["func.js", "package-lock.json", "node_modules"]
 }
 

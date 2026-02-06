@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Webhook Relay API テストスクリプト
+# Slack Webhook Relay API テストスクリプト
 
 set -e
 
@@ -23,13 +23,13 @@ if [ -z "$API_ENDPOINT" ] || [ -z "$SLACK_WEBHOOK" ]; then
     exit 1
 fi
 
-echo -e "${YELLOW}=== Webhook Relay API Test ===${NC}"
+echo -e "${YELLOW}=== Slack Webhook Relay API Test ===${NC}"
 echo "API Endpoint: $API_ENDPOINT"
 echo "Slack Webhook: ${SLACK_WEBHOOK:0:30}..."
 echo ""
 
-# テスト1: JSON形式のアラート送信
-echo -e "${YELLOW}Test 1: JSON Alert${NC}"
+# テスト1: JSON形式のアラート送信 (YAMLシンタックスハイライト付きで表示される)
+echo -e "${YELLOW}Test 1: JSON Alert (with YAML syntax highlighting)${NC}"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
   "${API_ENDPOINT}?d=${SLACK_WEBHOOK}" \
   -H "Content-Type: application/json" \

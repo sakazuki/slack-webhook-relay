@@ -17,13 +17,13 @@ variable "tenancy_namespace" {
 variable "application_name" {
   description = "Functions application name"
   type        = string
-  default     = "webhook-relay-app"
+  default     = "slack-webhook-relay-app"
 }
 
 variable "function_name" {
   description = "Function name"
   type        = string
-  default     = "webhook-relay"
+  default     = "slack-webhook-relay"
 }
 
 variable "function_version" {
@@ -82,7 +82,7 @@ variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)
   default = {
-    Service   = "webhook-relay"
+    Service   = "slack-webhook-relay"
     ManagedBy = "Terraform"
   }
 }
