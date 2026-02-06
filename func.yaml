@@ -1,0 +1,9 @@
+schema_version: 20180708
+name: webhook-relay
+version: 1.0.0
+runtime: docker
+build_image: node:25-alpine
+run_image: node:25-alpine
+entrypoint: node func.js
+memory: 256
+timeout: 30

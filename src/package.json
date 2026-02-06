@@ -1,0 +1,16 @@
+{
+  "name": "slack-webhook-relay",
+  "version": "1.0.0",
+  "description": "JSON to YAML converter for Slack webhook notifications",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0",
+    "node-fetch": "^2.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
