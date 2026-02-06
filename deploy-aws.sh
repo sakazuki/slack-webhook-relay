@@ -38,9 +38,5 @@ echo "=== Deployment Complete ==="
 terraform output
 
 echo ""
-echo "To get the API endpoint:"
-echo "  terraform output api_endpoint"
-
-echo ""
-echo "To get the API key (if enabled):"
-echo "  terraform output -raw api_key"
+echo "To get the Function URL:"
+echo "  terraform output function_url"

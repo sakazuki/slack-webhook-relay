@@ -128,8 +128,10 @@ function isJsonString(body) {
 async function handler(event) {
   try {
     // クエリパラメータから宛先Webhook URLを取得
+    // Lambda Function URL と API Gateway の両方に対応
     const destinationUrl = event.queryStringParameters?.d || 
-                          event.query?.d;
+                          event.query?.d ||
+                          (event.rawQueryString && new URLSearchParams(event.rawQueryString).get('d'));
 
     if (!destinationUrl) {
       return {

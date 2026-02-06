@@ -12,10 +12,12 @@ Slack Webhook通知用のJSON→YAML変換中継API。アラート通知のJSON�
 ## アーキテクチャ
 
 ```
-アラートシステム → [API Gateway] → [Lambda/Functions] → [Slack Webhook]
+アラートシステム → [Lambda Function URL] → [Lambda] → [Slack Webhook]
                        ↓
                   JSONをYAMLに変換
 ```
+
+AWS版はLambda Function URLを使用したシンプルな構成です。API Gatewayを使わないため、より低コストで運用できます。
 
 ## クイックスタート
 
@@ -35,6 +37,9 @@ cd terraform/aws
 terraform init
 terraform plan
 terraform apply
+
+# Function URLの確認
+terraform output function_url
 ```
 
 ### OCI Functionsへのデプロイ
@@ -175,7 +180,6 @@ SNS → Lambda → Webhook Relay → Slack の構成で連携可能
 | function_name | webhook-relay | Lambda関数名 |
 | lambda_timeout | 30 | タイムアウト(秒) |
 | lambda_memory_size | 256 | メモリサイズ(MB) |
-| enable_api_key | false | APIキー認証の有効化 |
 | log_retention_days | 14 | ログ保持期間(日) |
 
 ### OCI Functions
@@ -196,17 +200,13 @@ SNS → Lambda → Webhook Relay → Slack の構成で連携可能
 - Slack公式のWebhook URLのみ許可
 - URLのバリデーションを実装済み
 
-### レート制限
+### CORS設定
 
-AWS:
-```hcl
-variable "enable_api_key" {
-  default = true
-}
-variable "api_rate_limit" {
-  default = 100  # リクエスト/秒
-}
-```
+AWS Lambda Function URLでは、以下のCORS設定を適用:
+- POST メソッドのみ許可
+- 必要最小限のヘッダーのみ許可
+
+### レート制限
 
 OCI:
 ```hcl
@@ -217,6 +217,8 @@ variable "rate_limit_rps" {
   default = 100
 }
 ```
+
+AWS Lambda Function URLではネイティブなレート制限機能はありませんが、必要に応じてLambda関数内でのレート制限実装やAWS WAFの追加が可能です。
 
 ### ログ管理
 
@@ -262,12 +264,13 @@ oci logging-search search-logs \
 
 ## コスト見積もり
 
-### AWS Lambda
+### AWS Lambda (Function URL使用)
 
 - リクエスト: 100万件/月 → 約$0.20
 - 実行時間: 30秒、256MB → 約$0.83
-- API Gateway: 100万リクエスト → 約$3.50
-- **合計**: 約$4.53/月
+- **合計**: 約$1.03/月
+
+**API Gatewayを使わないため、従来の構成より約70%コスト削減!**
 
 ### OCI Functions
 
@@ -279,6 +282,21 @@ oci logging-search search-logs \
 ## ライセンス
 
 MIT
+
+## 変更履歴
+
+### v1.1.0
+- **AWS版**: API GatewayからLambda Function URLに変更
+  - コスト削減: 約70%削減 ($4.53/月 → $1.03/月)
+  - シンプルな構成
+  - デプロイが高速化
+- Lambda Function URLとAPI Gatewayの両形式のクエリパラメータに対応
+
+### v1.0.0
+- 初回リリース
+- AWS Lambda + API Gateway対応
+- OCI Functions対応
+- JSON→YAML変換機能
 
 ## サポート
 

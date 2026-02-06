@@ -34,36 +34,6 @@ variable "log_retention_days" {
   default     = 14
 }
 
-variable "api_stage_name" {
-  description = "API Gateway stage name"
-  type        = string
-  default     = "v1"
-}
-
-variable "enable_api_key" {
-  description = "Enable API key authentication"
-  type        = bool
-  default     = false
-}
-
-variable "api_quota_limit" {
-  description = "API Gateway daily quota limit"
-  type        = number
-  default     = 10000
-}
-
-variable "api_rate_limit" {
-  description = "API Gateway rate limit (requests per second)"
-  type        = number
-  default     = 100
-}
-
-variable "api_burst_limit" {
-  description = "API Gateway burst limit"
-  type        = number
-  default     = 200
-}
-
 variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)
