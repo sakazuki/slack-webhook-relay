@@ -60,6 +60,7 @@ terraform output function_url
 # 環境変数の設定
 export OCI_REGION="ap-tokyo-1"
 export OCI_TENANCY_NAMESPACE="your-tenancy-namespace"
+export TENANCY_OCID="ocid1.tenancy.oc1..xxxxx"
 export COMPARTMENT_ID="ocid1.compartment.oc1..xxxxx"
 export SUBNET_IDS='["ocid1.subnet.oc1..xxxxx"]'
 export GATEWAY_SUBNET_ID="ocid1.subnet.oc1..xxxxx"
@@ -220,14 +221,19 @@ SNS → Lambda → Webhook Relay → Slack の構成で連携可能
 
 ### OCI Functions
 
-| 変数名               | デフォルト          | 説明               |
-| -------------------- | ------------------- | ------------------ |
-| oci_region           | ap-tokyo-1          | OCIリージョン      |
-| function_name        | slack-webhook-relay | 関数名             |
-| function_timeout     | 30                  | タイムアウト(秒)   |
-| function_memory_mb   | 256                 | メモリサイズ(MB)   |
-| enable_rate_limiting | false               | レート制限の有効化 |
-| log_retention_days   | 14                  | ログ保持期間(日)   |
+| 変数名               | デフォルト          | 説明                                   |
+| -------------------- | ------------------- | -------------------------------------- |
+| oci_region           | ap-tokyo-1          | OCIリージョン                          |
+| compartment_id       | -                   | コンパートメントOCID（必須）           |
+| tenancy_ocid         | -                   | テナンシーOCID（必須、動的グループ用） |
+| tenancy_namespace    | -                   | テナンシー名前空間（OCIR用、必須）     |
+| function_name        | slack-webhook-relay | 関数名                                 |
+| function_timeout     | 30                  | タイムアウト(秒)                       |
+| function_memory_mb   | 256                 | メモリサイズ(MB)                       |
+| subnet_ids           | -                   | サブネットIDリスト（必須）             |
+| gateway_subnet_id    | -                   | API Gatewayサブネット（必須）          |
+| enable_rate_limiting | false               | レート制限の有効化                     |
+| log_retention_days   | 30                  | ログ保持期間(日)                       |
 
 ## セキュリティ
 
@@ -328,6 +334,11 @@ MIT
 - **シンプルモード追加**: `simple=true` パラメータでフォーマットなしのプレーンYAMLを送信可能
 - **キー抽出の改善**: シングルクォートを含むキー名（`user's_data`等）に対応
   - 正規表現を `[\w_-]` から `[\w'_-]` に変更
+- **OCI Terraform改善**:
+  - API Gateway Logsのリソース参照を修正（gateway → deployment）
+  - OCI Providerバージョンを8.0以上に更新
+  - API GatewayがFunctionsを実行するためのポリシーとDynamic Groupを追加
+  - ポリシーステートメントでCompartment名を使用（`compartment id` → `compartment`）
 
 ### v1.3.0
 
