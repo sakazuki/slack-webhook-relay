@@ -1,0 +1,57 @@
+<mxfile host="65bd71144e">
+    <diagram id="kk9LIzRCXfSkB5nNnglh" name="Page-1">
+        <mxGraphModel dx="701" dy="589" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="Topic&lt;br&gt;&lt;div&gt;Subscriber&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="80" y="350" width="80" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=4;endArrow=block;endFill=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="2" target="4">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="620" y="380" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="4" value="webhook&lt;div&gt;relay&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=4;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="349" width="80" height="40.5" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://uxwing.com/wp-content/themes/uxwing/download/file-and-folder-type/yaml-file-icon.png;" vertex="1" parent="1">
+                    <mxGeometry x="398.5" y="330" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://uxwing.com/wp-content/themes/uxwing/download/file-and-folder-type/json-file-icon.png;" vertex="1" parent="1">
+                    <mxGeometry x="203" y="330" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="7" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;shape=mxgraph.aws3.users;fillColor=#D2D3D3;gradientColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="510" y="340" width="66" height="63" as="geometry"/>
+                </mxCell>
+                <mxCell id="8" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=4;endArrow=block;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="4" target="11">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="260" y="381" as="sourcePoint"/>
+                        <mxPoint x="450" y="369" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="9" value="{&quot;alert&quot;: &quot;High CPU Usage&quot;,&quot;severity&quot;: &quot;warning&quot;,&quot;host&quot;: &quot;web-server-01&quot;,&quot;cpu_usage&quot;: 85.3,&quot;timestamp&quot;: &quot;2025-02-07T10:30:00Z&quot;}" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;size=17;align=left;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
+                    <mxGeometry x="160" y="240" width="116" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="&lt;div&gt;alert: High CPU Usage&lt;/div&gt;&lt;div&gt;severity: warning&lt;/div&gt;&lt;div&gt;host: web-server-01&lt;/div&gt;&lt;div&gt;value: 85.3&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;size=13;align=left;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;verticalAlign=top;" vertex="1" parent="1">
+                    <mxGeometry x="390" y="240" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="Slack" style="shape=image;html=1;verticalAlign=top;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;imageAspect=0;aspect=fixed;image=https://icons.diagrams.net/icon-cache1/Social_Media-2937/1_Slack_colored_svg-1005.svg;labelPosition=center;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="470" y="351.88" width="33.25" height="33.25" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="&lt;font style=&quot;color: rgb(255, 0, 0);&quot;&gt;https://hooks.slack.com/services/xxx&lt;/font&gt;" style="shape=callout;whiteSpace=wrap;html=1;perimeter=calloutPerimeter;fontSize=10;fillColor=#dae8fc;strokeColor=#6c8ebf;direction=west;" vertex="1" parent="1">
+                    <mxGeometry x="370" y="380.5" width="180" height="69.5" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="https://xxx.lambda-url.ap-northeast-1.on.aws/?d=&lt;font style=&quot;color: rgb(255, 0, 0);&quot;&gt;https://hooks.slack.com/services/xxx&lt;/font&gt;" style="shape=callout;whiteSpace=wrap;html=1;perimeter=calloutPerimeter;fontSize=10;fillColor=#dae8fc;strokeColor=#6c8ebf;direction=west;position2=0.18;size=30;position=0.23;" vertex="1" parent="1">
+                    <mxGeometry x="90" y="380" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;fillColor=#dae8fc;strokeColor=none;" edge="1" parent="1" source="9" target="10">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="280" y="290" as="sourcePoint"/>
+                        <mxPoint x="330" y="240" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

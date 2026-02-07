@@ -1,87 +1,32 @@
 # Slack Webhook Relay - JSON to YAML Converter
 
-Slack Webhook通知用のJSON→YAML変換中継API。アラート通知のJSONペイロードを読みやすいYAML形式に変換してSlackへ送信します。
+> **Language**: [English](README.md) | [日本語](README-ja.md)
 
-## 特徴
+## Architecture
 
-- **JSONをYAMLに自動変換**: アラート内容の可読性を向上
-- **2つの表示モード**:
-  - **通常モード**: 色付きサイドバー + 太字キーのスニペット風表示
-  - **シンプルモード**: フォーマットなしのプレーンYAML
-- **複数Webhook対応**: クエリパラメータで送信先を動的に指定
-- **マルチクラウド**: AWS LambdaとOCI Functionsの両方にデプロイ可能
-- **Infrastructure as Code**: Terraformで完全自動化
-- **軽量**: 依存関係は`js-yaml`のみ（Node.js標準fetchを使用）
+![architecture](docs/architecture.png)
 
-## 技術スタック
+A JSON → YAML conversion relay API for Slack webhook notifications.  
+Converts JSON payloads from alert notifications into a readable YAML format and sends them to Slack.
 
-- **Runtime**: Node.js 20+ (AWS Lambda) / Node.js 25 (OCI Functions)
-- **依存関係**:
-  - `js-yaml` - YAML変換
-  - Node.js標準 `fetch` - HTTP通信（外部ライブラリ不要）
-- **Infrastructure**: Terraform (AWS Provider 5.x / OCI Provider 5.x)
+## Features
 
-## アーキテクチャ
+- **Automatic JSON to YAML Conversion**: Improves readability of alert contents
+- **Two Display Modes**:
+  - **Normal Mode**: Color-coded sidebar + bold key snippet-style display
+  - **Simple Mode**: Plain YAML without formatting
+- **Multiple Webhook Support**: Dynamically specify destinations via query parameters
+- **Multi-Cloud**: Deployable to both AWS Lambda and OCI Functions
+- **Infrastructure as Code**: Fully automated with Terraform
+- **Lightweight**: Only dependency is `js-yaml` (uses Node.js standard fetch)
 
-```
-アラートシステム → [Lambda Function URL] → [Lambda] → [Slack Webhook]
-                       ↓
-                  JSONをYAMLに変換
-```
+## Usage
 
-AWS版はLambda Function URLを使用したシンプルな構成です。API Gatewayを使わないため、より低コストで運用できます。
+Simply call the API with your Slack Incoming Webhook URL as the value of the query parameter `d`
 
-## クイックスタート
+### Basic Examples
 
-### AWS Lambdaへのデプロイ
-
-```bash
-# 依存関係のインストール
-cd src
-npm install
-
-# デプロイスクリプトの実行
-cd ..
-./deploy-aws.sh
-
-# または手動でTerraform実行
-cd terraform/aws
-terraform init
-terraform plan
-terraform apply
-
-# Function URLの確認
-terraform output function_url
-```
-
-### OCI Functionsへのデプロイ
-
-```bash
-# 環境変数の設定
-export OCI_REGION="ap-tokyo-1"
-export OCI_TENANCY_NAMESPACE="your-tenancy-namespace"
-export TENANCY_OCID="ocid1.tenancy.oc1..xxxxx"
-export COMPARTMENT_ID="ocid1.compartment.oc1..xxxxx"
-export SUBNET_IDS='["ocid1.subnet.oc1..xxxxx"]'
-export GATEWAY_SUBNET_ID="ocid1.subnet.oc1..xxxxx"
-
-# デプロイスクリプトの実行
-./deploy-oci.sh
-
-# または手動でデプロイ
-docker build -t ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/slack-webhook-relay-repo:latest .
-docker push ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/slack-webhook-relay-repo:latest
-
-cd terraform/oci
-terraform init
-terraform apply
-```
-
-## 使い方
-
-### 基本的な使用例
-
-**通常モード（スニペット風表示）:**
+**Normal Mode (Snippet-style display):**
 
 ```bash
 curl -X POST "https://api.example.com/?d=https://hooks.slack.com/services/YOUR/WEBHOOK/PATH" \
@@ -95,7 +40,7 @@ curl -X POST "https://api.example.com/?d=https://hooks.slack.com/services/YOUR/W
   }'
 ```
 
-**シンプルモード（フォーマットなし）:**
+**Simple Mode (Unformatted):**
 
 ```bash
 curl -X POST "https://api.example.com/?d=https://hooks.slack.com/services/YOUR/WEBHOOK/PATH&simple=true" \
@@ -108,62 +53,119 @@ curl -X POST "https://api.example.com/?d=https://hooks.slack.com/services/YOUR/W
   }'
 ```
 
-### Slackでの表示
+### Display in Slack
 
-**変換前 (通常のJSON送信)**
+**Before Conversion (Regular JSON)**
 
-![alt text](docs/image-default.png)
+- Unformatted and difficult to read
 
-**変換後 - 通常モード (スニペット風表示)**
+  ![alt text](docs/image-default.png)
 
-![default](docs/image-rich.png)
+**After Conversion - Normal Mode (Snippet-style display)**
 
-**変換後 - シンプルモード (`simple=true`)**
+- Normal Mode: Snippet-style display using Attachments with bold keys and color-coded sidebar for improved visibility
 
-![simple](docs/image-simple.png)
+  ![default](docs/image-rich.png)
 
-- 通常モード: Attachmentを使ったスニペット風の表示により、キーが太字で強調され、色付きサイドバーで視認性が向上
-- シンプルモード: プレーンなYAMLをコードブロックで表示、装飾なし
+**After Conversion - Simple Mode (`simple=true`)**
 
-### プレーンテキストの送信
+- Simple Mode: Plain YAML displayed in code block without decoration
+
+  ![simple](docs/image-simple.png)
+
+### Sending Plain Text
 
 ```bash
-# プレーンテキストもそのまま送信可能
+# Plain text can also be sent as-is
 curl -X POST "https://api.example.com/webhooks?d=https://hooks.slack.com/services/YOUR/WEBHOOK/PATH" \
   -H "Content-Type: text/plain" \
-  -d "サーバーが正常に起動しました"
+  -d "Server started successfully"
 ```
 
-## API仕様
+## Technology Stack
 
-### エンドポイント
+- **Runtime**: Node.js 20+ (AWS Lambda) / Node.js 25 (OCI Functions)
+- **Dependencies**:
+  - `js-yaml` - YAML conversion
+  - Node.js standard `fetch` - HTTP communication (no external library needed)
+- **Infrastructure**: Terraform
+
+## Quick Start
+
+### Deploy to AWS Lambda
+
+```bash
+# Install dependencies
+cd src
+npm install
+
+# Run deployment script
+cd ..
+./deploy-aws.sh
+
+# Or manually run Terraform
+cd terraform/aws
+terraform init
+terraform plan
+terraform apply
+
+# Check Function URL
+terraform output function_url
+```
+
+### Deploy to OCI Functions
+
+```bash
+# Set environment variables
+export OCI_REGION="ap-tokyo-1"
+export OCI_TENANCY_NAMESPACE="your-tenancy-namespace"
+export TENANCY_OCID="ocid1.tenancy.oc1..xxxxx"
+export COMPARTMENT_ID="ocid1.compartment.oc1..xxxxx"
+export SUBNET_IDS='["ocid1.subnet.oc1..xxxxx"]'
+export GATEWAY_SUBNET_ID="ocid1.subnet.oc1..xxxxx"
+
+# Run deployment script
+./deploy-oci.sh
+
+# Or deploy manually
+docker build -t ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/slack-webhook-relay-repo:latest .
+docker push ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/slack-webhook-relay-repo:latest
+
+cd terraform/oci
+terraform init
+terraform apply
+```
+
+## API Specification
+
+### Endpoint
 
 ```
 POST /webhooks
 ```
 
-### クエリパラメータ
+### Query Parameters
 
-| パラメータ | 必須 | 説明                                       | 例                                             |
-| ---------- | ---- | ------------------------------------------ | ---------------------------------------------- |
-| d          | ✓    | 送信先のSlack Webhook URL                  | `https://hooks.slack.com/services/XXX/YYY/ZZZ` |
-| simple     | -    | `true`でシンプルモード（フォーマットなし） | `true` または `false`（デフォルト）            |
+| Parameter | Required | Description                          | Example                                        |
+| --------- | -------- | ------------------------------------ | ---------------------------------------------- |
+| d         | ✓        | Destination Slack Webhook URL        | `https://hooks.slack.com/services/XXX/YYY/ZZZ` |
+| simple    | -        | `true` for simple mode (unformatted) | `true` or `false` (default)                    |
 
-**シンプルモード (`simple=true`)**:
+**Simple Mode (`simple=true`)**:
 
-- シンタックスハイライトなしのプレーンなYAMLをコードブロックで送信
-- 色付きサイドバーや太字フォーマットなし
-- 軽量でシンプルな表示
+- Plain YAML without syntax highlighting displayed in code block
+- No color-coded sidebar or bold formatting
+- Lightweight and simple display
 
-### リクエストボディ
+### Request Body
 
-- **Content-Type**: `application/json` または `text/plain`
-- JSON形式の場合は自動的にYAMLに変換されます
-- プレーンテキストの場合はそのまま送信されます
+- **Content-Type**: `application/json` or `text/plain`
+- JSON format is automatically converted to YAML
+- Plain text is sent as-is
 
-### レスポンス
+### Response
 
-**成功時 (200 OK)**
+**Success (200 OK)**
 
 ```json
 {
@@ -173,7 +175,7 @@ POST /webhooks
 }
 ```
 
-**エラー時 (400 Bad Request)**
+**Error (400 Bad Request)**
 
 ```json
 {
@@ -181,7 +183,7 @@ POST /webhooks
 }
 ```
 
-## 監視アラートとの連携例
+## Integration with Monitoring Alerts
 
 ### Prometheus Alertmanager
 
@@ -205,51 +207,51 @@ receivers:
 
 ### CloudWatch Alarms (AWS)
 
-SNS → Lambda → Webhook Relay → Slack の構成で連携可能
+Can be integrated in SNS → Lambda → Webhook Relay → Slack configuration
 
-## Terraform変数
+## Terraform Variables
 
 ### AWS Lambda
 
-| 変数名             | デフォルト          | 説明             |
-| ------------------ | ------------------- | ---------------- |
-| aws_region         | ap-northeast-1      | AWSリージョン    |
-| function_name      | slack-webhook-relay | Lambda関数名     |
-| lambda_timeout     | 30                  | タイムアウト(秒) |
-| lambda_memory_size | 256                 | メモリサイズ(MB) |
-| log_retention_days | 14                  | ログ保持期間(日) |
+| Variable Name      | Default             | Description          |
+| ------------------ | ------------------- | -------------------- |
+| aws_region         | ap-northeast-1      | AWS Region           |
+| function_name      | slack-webhook-relay | Lambda Function Name |
+| lambda_timeout     | 30                  | Timeout (seconds)    |
+| lambda_memory_size | 256                 | Memory Size (MB)     |
+| log_retention_days | 14                  | Log Retention (days) |
 
 ### OCI Functions
 
-| 変数名               | デフォルト          | 説明                                   |
-| -------------------- | ------------------- | -------------------------------------- |
-| oci_region           | ap-tokyo-1          | OCIリージョン                          |
-| compartment_id       | -                   | コンパートメントOCID（必須）           |
-| tenancy_ocid         | -                   | テナンシーOCID（必須、動的グループ用） |
-| tenancy_namespace    | -                   | テナンシー名前空間（OCIR用、必須）     |
-| function_name        | slack-webhook-relay | 関数名                                 |
-| function_timeout     | 30                  | タイムアウト(秒)                       |
-| function_memory_mb   | 256                 | メモリサイズ(MB)                       |
-| subnet_ids           | -                   | サブネットIDリスト（必須）             |
-| gateway_subnet_id    | -                   | API Gatewayサブネット（必須）          |
-| enable_rate_limiting | false               | レート制限の有効化                     |
-| log_retention_days   | 30                  | ログ保持期間(日)                       |
+| Variable Name        | Default             | Description                                 |
+| -------------------- | ------------------- | ------------------------------------------- |
+| oci_region           | ap-tokyo-1          | OCI Region                                  |
+| compartment_id       | -                   | Compartment OCID (required)                 |
+| tenancy_ocid         | -                   | Tenancy OCID (required, for dynamic groups) |
+| tenancy_namespace    | -                   | Tenancy Namespace (required, for OCIR)      |
+| function_name        | slack-webhook-relay | Function Name                               |
+| function_timeout     | 30                  | Timeout (seconds)                           |
+| function_memory_mb   | 256                 | Memory Size (MB)                            |
+| subnet_ids           | -                   | Subnet ID List (required)                   |
+| gateway_subnet_id    | -                   | API Gateway Subnet (required)               |
+| enable_rate_limiting | false               | Enable Rate Limiting                        |
+| log_retention_days   | 30                  | Log Retention (days)                        |
 
-## セキュリティ
+## Security
 
-### Webhook URLの検証
+### Webhook URL Validation
 
-- Slack公式のWebhook URLのみ許可
-- URLのバリデーションを実装済み
+- Only official Slack webhook URLs are allowed
+- URL validation is implemented
 
-### CORS設定
+### CORS Configuration
 
-AWS Lambda Function URLでは、以下のCORS設定を適用:
+For AWS Lambda Function URL, the following CORS settings are applied:
 
-- POST メソッドのみ許可
-- 必要最小限のヘッダーのみ許可
+- Only POST method allowed
+- Only necessary headers allowed
 
-### レート制限
+### Rate Limiting
 
 OCI:
 
@@ -262,122 +264,69 @@ variable "rate_limit_rps" {
 }
 ```
 
-AWS Lambda Function URLではネイティブなレート制限機能はありませんが、必要に応じてLambda関数内でのレート制限実装やAWS WAFの追加が可能です。
+AWS Lambda Function URL doesn't have native rate limiting, but you can implement rate limiting within the Lambda function or add AWS WAF if needed.
 
-### ログ管理
+### Log Management
 
-- すべてのリクエストをCloudWatch Logs/OCI Loggingに記録
-- Webhook URLは部分的にマスキング
-- エラーログの詳細記録
+- All requests are logged to CloudWatch Logs/OCI Logging
+- Webhook URLs are partially masked
+- Detailed error logging
 
-## トラブルシューティング
+## Troubleshooting
 
-### Lambda デプロイエラー
+### Lambda Deployment Error
 
 ```bash
-# ZIPファイルのサイズを確認
+# Check ZIP file size
 du -h terraform/aws/slack-webhook-relay.zip
 
-# 依存関係を再インストール
+# Reinstall dependencies
 cd src
 rm -rf node_modules
 npm install --production
 ```
 
-### OCI Functions イメージプッシュエラー
+### OCI Functions Image Push Error
 
 ```bash
-# OCIRへの認証を再実行
+# Re-authenticate to OCIR
 docker login ${OCI_REGION}.ocir.io
 
-# イメージのビルドとプッシュを再実行
+# Rebuild and push image
 docker build -t ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/slack-webhook-relay-repo:latest .
 docker push ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/slack-webhook-relay-repo:latest
 ```
 
-### Slack送信エラー
+### Slack Sending Error
 
 ```bash
-# ログの確認 (AWS)
+# Check logs (AWS)
 aws logs tail /aws/lambda/slack-webhook-relay --follow
 
-# ログの確認 (OCI)
+# Check logs (OCI)
 oci logging-search search-logs \
   --search-query "search \"<log-group-id>\" | sort by datetime desc"
 ```
 
-## コスト見積もり
+## Cost Estimation
 
-### AWS Lambda (Function URL使用)
+### AWS Lambda (Using Function URL)
 
-- リクエスト: 100万件/月 → 約$0.20
-- 実行時間: 30秒、256MB → 約$0.83
-- **合計**: 約$1.03/月
+- Requests: 1 million/month → ~$0.20
+- Execution time: 30 seconds, 256MB → ~$0.83
+- **Total**: ~$1.03/month
 
-**API Gatewayを使わないため、従来の構成より約70%コスト削減!**
+**~70% cost reduction compared to traditional API Gateway setup!**
 
 ### OCI Functions
 
-- リクエスト: 100万件/月 → 約$0.20
-- 実行時間: 30秒、256MB → 約$0.60
-- API Gateway: 100万リクエスト → 約$3.00
-- **合計**: 約$3.80/月
+- Requests: 1 million/month → ~$0.20
+- Execution time: 30 seconds, 256MB → ~$0.60
+- API Gateway: 1 million requests → ~$3.00
+- **Total**: ~$3.80/month
 
-## ライセンス
+## License
 
 MIT
 
-## 変更履歴
-
-### v1.4.0
-
-- **シンプルモード追加**: `simple=true` パラメータでフォーマットなしのプレーンYAMLを送信可能
-- **キー抽出の改善**: シングルクォートを含むキー名（`user's_data`等）に対応
-  - 正規表現を `[\w_-]` から `[\w'_-]` に変更
-- **OCI Terraform改善**:
-  - API Gateway Logsのリソース参照を修正（gateway → deployment）
-  - OCI Providerバージョンを8.0以上に更新
-  - API GatewayがFunctionsを実行するためのポリシーとDynamic Groupを追加
-  - ポリシーステートメントでCompartment名を使用（`compartment id` → `compartment`）
-
-### v1.3.0
-
-- **Node.jsバージョン更新**:
-  - OCI Functions: Node.js 25に更新
-  - AWS Lambda: Node.js 20に更新
-- **依存関係の最適化**:
-  - `node-fetch` を削除し、Node.js標準の `fetch` を使用
-  - 依存関係が `js-yaml` のみになり軽量化
-- **formatYamlForSlack改善**:
-  - `'null'` 文字列値の適切な処理
-  - ヒアドキュメント内のハイライトを無効化（URL、タイムスタンプ等の誤検出を防止）
-  - インデントベースの正確なヒアドキュメント検出
-- **ビルド改善**: Terraformのnode_modules除外を削除（依存関係を含めてデプロイ）
-
-### v1.2.0
-
-- **スニペット風表示に対応**: Slack Attachmentを使用してスニペット風の表示を実現
-  - 色付きサイドバー（赤系）で注意を引く
-  - キー名を太字で強調表示
-  - ヘッダー・フッター・絵文字で視認性向上
-  - Incoming Webhook経由で動作（OAuthトークン不要）
-- キーと値が視覚的に区別しやすくなり、可読性がさらに向上
-
-### v1.1.0
-
-- **AWS版**: API GatewayからLambda Function URLに変更
-  - コスト削減: 約70%削減 ($4.53/月 → $1.03/月)
-  - シンプルな構成
-  - デプロイが高速化
-- Lambda Function URLとAPI Gatewayの両形式のクエリパラメータに対応
-
-### v1.0.0
-
-- 初回リリース
-- AWS Lambda + API Gateway対応
-- OCI Functions対応
-- JSON→YAML変換機能
-
-## サポート
-
-Issue報告やプルリクエストを歓迎します。
+See [CHANGELOG.md](CHANGELOG.md) for release history.
