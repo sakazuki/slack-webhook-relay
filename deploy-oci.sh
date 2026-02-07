@@ -5,9 +5,15 @@ set -e
 echo "=== OCI Functions Deployment ==="
 
 # 必要な変数のチェック
-if [ -z "$OCI_REGION" ] || [ -z "$OCI_TENANCY_NAMESPACE" ] || [ -z "$COMPARTMENT_ID" ]; then
+if [ -z "$OCI_REGION" ] || [ -z "$OCI_TENANCY_NAMESPACE" ] || [ -z "$COMPARTMENT_ID" ] || [ -z "$TENANCY_OCID" ]; then
     echo "Error: Required environment variables are not set."
-    echo "Please set: OCI_REGION, OCI_TENANCY_NAMESPACE, COMPARTMENT_ID"
+    echo "Please set: OCI_REGION, OCI_TENANCY_NAMESPACE, COMPARTMENT_ID, TENANCY_OCID"
+    exit 1
+fi
+
+if [ -z "$SUBNET_ID" ] || [ -z "$GATEWAY_SUBNET_ID" ]; then
+    echo "Error: Network-related environment variables are not set."
+    echo "Please set: SUBNET_ID, GATEWAY_SUBNET_ID"
     exit 1
 fi
 
@@ -43,7 +49,10 @@ terraform init
 cat > terraform.tfvars <<EOF
 oci_region          = "$OCI_REGION"
 compartment_id      = "$COMPARTMENT_ID"
+tenancy_ocid        = "$TENANCY_OCID"
 tenancy_namespace   = "$OCI_TENANCY_NAMESPACE"
+subnet_ids          = ["$SUBNET_ID"]
+gateway_subnet_id   = "$GATEWAY_SUBNET_ID"
 EOF
 
 # プランの確認

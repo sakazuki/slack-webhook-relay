@@ -21,7 +21,7 @@ data "archive_file" "lambda_zip" {
   type        = "zip"
   source_dir  = "${path.module}/../../src"
   output_path = "${path.module}/slack-webhook-relay.zip"
-  excludes    = ["func.js", "package-lock.json", "node_modules"]
+  excludes    = ["func.js", "package-lock.json"]
 }
 
 # Lambda実行ロール
@@ -57,7 +57,7 @@ resource "aws_lambda_function" "webhook_relay" {
   role            = aws_iam_role.lambda_role.arn
   handler         = "index.handler"
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
-  runtime         = "nodejs18.x"
+  runtime         = "nodejs20.x"
   timeout         = var.lambda_timeout
   memory_size     = var.lambda_memory_size
 

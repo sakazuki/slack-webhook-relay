@@ -9,14 +9,14 @@ fdk.handle(async function(input, ctx) {
     // FDK形式からAPI Gateway形式に変換
     const event = {
       body: typeof input === 'string' ? input : JSON.stringify(input),
-      queryStringParameters: ctx.config || {},
-      headers: ctx.headers || {},
+      queryStringParameters: ctx._config || {},
+      headers: ctx._headers || {},
       isBase64Encoded: false
     };
 
     // ヘッダーからクエリパラメータを取得（OCI Functionsの場合）
-    if (ctx.headers && ctx.headers['fn-http-request-url']) {
-      const url = new URL(ctx.headers['fn-http-request-url']);
+    if (ctx._headers && ctx._headers["Fn-Http-Request-Url"][0]) {
+      const url = new URL("https://dummy" + ctx._headers["Fn-Http-Request-Url"][0]);
       event.queryStringParameters = Object.fromEntries(url.searchParams);
     }
 

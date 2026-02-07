@@ -9,6 +9,11 @@ variable "compartment_id" {
   type        = string
 }
 
+variable "tenancy_ocid" {
+  description = "OCI Tenancy OCID (required for dynamic group creation)"
+  type        = string
+}
+
 variable "tenancy_namespace" {
   description = "OCI Tenancy namespace for OCIR"
   type        = string
@@ -63,7 +68,7 @@ variable "gateway_subnet_id" {
 variable "log_retention_days" {
   description = "Log retention period in days"
   type        = number
-  default     = 14
+  default     = 30
 }
 
 variable "enable_rate_limiting" {

@@ -1,13 +1,25 @@
-# Webhook Relay - JSON to YAML Converter
+# Slack Webhook Relay - JSON to YAML Converter
 
 Slack Webhook通知用のJSON→YAML変換中継API。アラート通知のJSONペイロードを読みやすいYAML形式に変換してSlackへ送信します。
 
 ## 特徴
 
 - **JSONをYAMLに自動変換**: アラート内容の可読性を向上
+- **2つの表示モード**:
+  - **通常モード**: 色付きサイドバー + 太字キーのスニペット風表示
+  - **シンプルモード**: フォーマットなしのプレーンYAML
 - **複数Webhook対応**: クエリパラメータで送信先を動的に指定
 - **マルチクラウド**: AWS LambdaとOCI Functionsの両方にデプロイ可能
 - **Infrastructure as Code**: Terraformで完全自動化
+- **軽量**: 依存関係は`js-yaml`のみ（Node.js標準fetchを使用）
+
+## 技術スタック
+
+- **Runtime**: Node.js 20+ (AWS Lambda) / Node.js 25 (OCI Functions)
+- **依存関係**:
+  - `js-yaml` - YAML変換
+  - Node.js標準 `fetch` - HTTP通信（外部ライブラリ不要）
+- **Infrastructure**: Terraform (AWS Provider 5.x / OCI Provider 5.x)
 
 ## アーキテクチャ
 
@@ -68,9 +80,10 @@ terraform apply
 
 ### 基本的な使用例
 
+**通常モード（スニペット風表示）:**
+
 ```bash
-# JSON形式のアラートを送信
-curl -X POST "https://api.example.com/webhooks?d=https://hooks.slack.com/services/YOUR/WEBHOOK/PATH" \
+curl -X POST "https://api.example.com/?d=https://hooks.slack.com/services/YOUR/WEBHOOK/PATH" \
   -H "Content-Type: application/json" \
   -d '{
     "alert": "High CPU Usage",
@@ -81,23 +94,35 @@ curl -X POST "https://api.example.com/webhooks?d=https://hooks.slack.com/service
   }'
 ```
 
+**シンプルモード（フォーマットなし）:**
+
+```bash
+curl -X POST "https://api.example.com/?d=https://hooks.slack.com/services/YOUR/WEBHOOK/PATH&simple=true" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "alert": "High CPU Usage",
+    "severity": "warning",
+    "host": "web-server-01",
+    "cpu_usage": 85.3
+  }'
+```
+
 ### Slackでの表示
 
 **変換前 (通常のJSON送信)**
 
-```
-{"alert":"High CPU Usage","severity":"warning","host":"web-server-01","cpu_usage":85.3,"timestamp":"2025-02-07T10:30:00Z"}
-```
+![alt text](docs/image-default.png)
 
-**変換後 (このAPIを使用)**
+**変換後 - 通常モード (スニペット風表示)**
 
-```yaml
-alert: High CPU Usage
-severity: warning
-host: web-server-01
-cpu_usage: 85.3
-timestamp: "2025-02-07T10:30:00Z"
-```
+![default](docs/image-rich.png)
+
+**変換後 - シンプルモード (`simple=true`)**
+
+![simple](docs/image-simple.png)
+
+- 通常モード: Attachmentを使ったスニペット風の表示により、キーが太字で強調され、色付きサイドバーで視認性が向上
+- シンプルモード: プレーンなYAMLをコードブロックで表示、装飾なし
 
 ### プレーンテキストの送信
 
@@ -118,9 +143,16 @@ POST /webhooks
 
 ### クエリパラメータ
 
-| パラメータ | 必須 | 説明                      | 例                                             |
-| ---------- | ---- | ------------------------- | ---------------------------------------------- |
-| d          | ✓    | 送信先のSlack Webhook URL | `https://hooks.slack.com/services/XXX/YYY/ZZZ` |
+| パラメータ | 必須 | 説明                                       | 例                                             |
+| ---------- | ---- | ------------------------------------------ | ---------------------------------------------- |
+| d          | ✓    | 送信先のSlack Webhook URL                  | `https://hooks.slack.com/services/XXX/YYY/ZZZ` |
+| simple     | -    | `true`でシンプルモード（フォーマットなし） | `true` または `false`（デフォルト）            |
+
+**シンプルモード (`simple=true`)**:
+
+- シンタックスハイライトなしのプレーンなYAMLをコードブロックで送信
+- 色付きサイドバーや太字フォーマットなし
+- 軽量でシンプルな表示
 
 ### リクエストボディ
 
@@ -290,6 +322,35 @@ oci logging-search search-logs \
 MIT
 
 ## 変更履歴
+
+### v1.4.0
+
+- **シンプルモード追加**: `simple=true` パラメータでフォーマットなしのプレーンYAMLを送信可能
+- **キー抽出の改善**: シングルクォートを含むキー名（`user's_data`等）に対応
+  - 正規表現を `[\w_-]` から `[\w'_-]` に変更
+
+### v1.3.0
+
+- **Node.jsバージョン更新**:
+  - OCI Functions: Node.js 25に更新
+  - AWS Lambda: Node.js 20に更新
+- **依存関係の最適化**:
+  - `node-fetch` を削除し、Node.js標準の `fetch` を使用
+  - 依存関係が `js-yaml` のみになり軽量化
+- **formatYamlForSlack改善**:
+  - `'null'` 文字列値の適切な処理
+  - ヒアドキュメント内のハイライトを無効化（URL、タイムスタンプ等の誤検出を防止）
+  - インデントベースの正確なヒアドキュメント検出
+- **ビルド改善**: Terraformのnode_modules除外を削除（依存関係を含めてデプロイ）
+
+### v1.2.0
+
+- **スニペット風表示に対応**: Slack Attachmentを使用してスニペット風の表示を実現
+  - 色付きサイドバー（赤系）で注意を引く
+  - キー名を太字で強調表示
+  - ヘッダー・フッター・絵文字で視認性向上
+  - Incoming Webhook経由で動作（OAuthトークン不要）
+- キーと値が視覚的に区別しやすくなり、可読性がさらに向上
 
 ### v1.1.0
 

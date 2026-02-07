@@ -165,4 +165,28 @@ else
 fi
 echo ""
 
+# テスト7: シンプルモード
+echo -e "${YELLOW}Test 7: Simple Mode (simple=true)${NC}"
+RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+  "${API_ENDPOINT}?d=${SLACK_WEBHOOK}&simple=true" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "alert": "Database Error",
+    "severity": "critical",
+    "host": "db-server-01",
+    "error_code": 500
+  }')
+
+HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+BODY=$(echo "$RESPONSE" | head -n-1)
+
+if [ "$HTTP_CODE" = "200" ]; then
+    echo -e "${GREEN}✓ Test 7 Passed${NC}"
+    echo "Response: $BODY"
+else
+    echo -e "${RED}✗ Test 7 Failed (HTTP $HTTP_CODE)${NC}"
+    echo "Response: $BODY"
+fi
+echo ""
+
 echo -e "${YELLOW}=== Test Complete ===${NC}"

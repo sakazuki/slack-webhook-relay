@@ -3,13 +3,14 @@ terraform {
   required_providers {
     oci = {
       source  = "oracle/oci"
-      version = "~> 5.0"
+      version = "~> 8.0"
     }
   }
 }
 
 provider "oci" {
   region = var.oci_region
+  config_file_profile = "indigo201"
 }
 
 # 既存のコンパートメントを参照
@@ -44,6 +45,7 @@ resource "oci_functions_function" "slack_webhook_relay" {
   application_id = oci_functions_application.slack_webhook_relay_app.id
   display_name   = var.function_name
   image          = "${var.oci_region}.ocir.io/${var.tenancy_namespace}/${oci_artifacts_container_repository.slack_webhook_relay_repo.display_name}:${var.function_version}"
+  image_digest   = var.image_digest
   memory_in_mbs  = var.function_memory_mb
   timeout_in_seconds = var.function_timeout
 
@@ -155,7 +157,7 @@ resource "oci_logging_log" "gateway_access_logs" {
   configuration {
     source {
       category    = "access"
-      resource    = oci_apigateway_gateway.slack_webhook_gateway.id
+      resource    = oci_apigateway_deployment.slack_webhook_deployment.id
       service     = "apigateway"
       source_type = "OCISERVICE"
     }
@@ -178,7 +180,7 @@ resource "oci_logging_log" "gateway_execution_logs" {
   configuration {
     source {
       category    = "execution"
-      resource    = oci_apigateway_gateway.slack_webhook_gateway.id
+      resource    = oci_apigateway_deployment.slack_webhook_deployment.id
       service     = "apigateway"
       source_type = "OCISERVICE"
     }
@@ -188,6 +190,31 @@ resource "oci_logging_log" "gateway_execution_logs" {
 
   is_enabled         = true
   retention_duration = var.log_retention_days
+
+  freeform_tags = var.tags
+}
+
+# Dynamic Group for API Gateway
+resource "oci_identity_dynamic_group" "api_gateway_dynamic_group" {
+  compartment_id = var.tenancy_ocid
+  name           = "${var.function_name}-apigw-dg"
+  description    = "Dynamic group for API Gateway to invoke Functions"
+
+  matching_rule = "ALL {resource.type = 'ApiGateway', resource.compartment.id = '${var.compartment_id}'}"
+
+  freeform_tags = var.tags
+}
+
+# Policy for API Gateway to invoke Functions
+resource "oci_identity_policy" "api_gateway_functions_policy" {
+  compartment_id = var.compartment_id
+  name           = "${var.function_name}-apigw-functions-policy"
+  description    = "Policy to allow API Gateway to invoke Functions"
+
+  statements = [
+    "Allow dynamic-group ${oci_identity_dynamic_group.api_gateway_dynamic_group.name} to use functions-family in compartment ${data.oci_identity_compartment.target.name}",
+    "Allow dynamic-group ${oci_identity_dynamic_group.api_gateway_dynamic_group.name} to read repos in compartment ${data.oci_identity_compartment.target.name}"
+  ]
 
   freeform_tags = var.tags
 }

@@ -1,5 +1,4 @@
 const yaml = require('js-yaml');
-const fetch = require('node-fetch');
 
 /**
  * JSON文字列をYAMLに変換
@@ -20,30 +19,135 @@ function convertJsonToYaml(jsonString) {
 }
 
 /**
+ * YAMLを見やすくフォーマット（Slack用）
+ * @param {string} yamlContent - YAML文字列
+ * @returns {string} フォーマット済みYAML
+ */
+function formatYamlForSlack(yamlContent) {
+  const lines = yamlContent.split('\n');
+  let inHeredoc = false; // ヒアドキュメント内かどうかのフラグ
+  let heredocIndent = 0; // ヒアドキュメントの基準インデント
+
+  const formatted = lines.map((line, index) => {
+    // 空行はそのまま
+    if (line.trim() === '') {
+      return line;
+    }
+
+    const currentIndent = line.match(/^(\s*)/)[1].length;
+
+    // ヒアドキュメント内の処理
+    if (inHeredoc) {
+      // ヒアドキュメント内の行は、基準インデントより深いインデントを持つ
+      if (currentIndent > heredocIndent) {
+        // ヒアドキュメント内の行はそのまま返す（ハイライトしない）
+        return line;
+      } else {
+        // インデントが戻った = ヒアドキュメント終了
+        inHeredoc = false;
+        heredocIndent = 0;
+        // この行は通常の処理へ進む
+      }
+    }
+
+    // ヒアドキュメントの開始を検出
+    // |, |-, |+, >, >-, >+ などで始まる行はヒアドキュメントの開始
+    if (line.match(/^\s*[\w'_-]+:\s*[|>][-+]?\s*$/)) {
+      inHeredoc = true;
+      heredocIndent = currentIndent;
+      // キー部分だけを太字にする
+      return line.replace(/^(\s*)([\w'_-]+)(:\s*[|>][-+]?\s*)$/, '$1*$2*$3');
+    }
+
+    // キー: 値 のパターンにマッチ
+    const keyValueMatch = line.match(/^(\s*)([\w'_-]+):\s*(.*)$/);
+    if (keyValueMatch) {
+      const indent = keyValueMatch[1];
+      const key = keyValueMatch[2];
+      const value = keyValueMatch[3];
+
+      // 値がある場合は太字で強調
+      if (value && value !== '' && value !== 'null') {
+        return `${indent}*${key}:* ${value}`;
+      } else {
+        // 値がない場合（ネストの親）は太字のキーのみ
+        return `${indent}*${key}:*`;
+      }
+    }
+
+    // リスト項目
+    if (line.match(/^\s*-\s+/)) {
+      return line.replace(/^(\s*-\s+)(.+)$/, '$1`$2`');
+    }
+
+    return line;
+  });
+
+  return formatted.join('\n');
+}
+
+/**
  * Slackのメッセージペイロードを作成
  * @param {string} content - 元のコンテンツ
  * @param {boolean} isJson - JSONかどうか
+ * @param {boolean} simple - シンプルモード（シンタックスハイライトなし）
  * @returns {object} Slackペイロード
  */
-function createSlackPayload(content, isJson = false) {
+function createSlackPayload(content, isJson = false, simple = false) {
   if (isJson) {
     const yamlContent = convertJsonToYaml(content);
+    // シンプルモード: コードブロックのみ
+    if (simple) {
+      return {
+        text: "Alert Notification",
+        blocks: [
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "```\n" + yamlContent + "```"
+            }
+          }
+        ]
+      };
+    }
+    // 通常モード: スニペット風表示
+    const formattedYaml = formatYamlForSlack(yamlContent);
+    // Attachmentでスニペット風に表示（色付きサイドバー + フォーマット）
     return {
-      text: "Alert Notification",
-      blocks: [
+      text: "🚨 Alert Notification",
+      attachments: [
         {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: "*Alert Details*"
-          }
-        },
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: "```\n" + yamlContent + "\n```"
-          }
+          color: "#ff6b6b",
+          blocks: [
+            {
+              type: "header",
+              text: {
+                type: "plain_text",
+                text: "📋 Alert Details",
+                emoji: true
+              }
+            },
+            {
+              type: "section",
+              text: {
+                type: "mrkdwn",
+                text: formattedYaml
+              }
+            },
+            {
+              type: "divider"
+            },
+            {
+              type: "context",
+              elements: [
+                {
+                  type: "mrkdwn",
+                  text: `📄 Format: YAML | ⏰ ${new Date().toISOString()}`
+                }
+              ]
+            }
+          ]
         }
       ]
     };
@@ -143,6 +247,11 @@ async function handler(event) {
       };
     }
 
+    // シンプルモードフラグを取得
+    const simpleMode = event.queryStringParameters?.simple === 'true' || 
+                       event.query?.simple === 'true' ||
+                       (event.rawQueryString && new URLSearchParams(event.rawQueryString).get('simple') === 'true');
+
     // Webhook URLのバリデーション
     if (!isValidWebhookUrl(destinationUrl)) {
       return {
@@ -176,7 +285,7 @@ async function handler(event) {
     const isJson = isJsonString(body);
 
     // Slackペイロードを作成
-    const slackPayload = createSlackPayload(body, isJson);
+    const slackPayload = createSlackPayload(body, isJson, simpleMode);
 
     // Slackへ送信
     const result = await sendToSlack(destinationUrl, slackPayload);
@@ -187,6 +296,7 @@ async function handler(event) {
       body: JSON.stringify({
         message: 'Successfully sent to Slack',
         converted: isJson,
+        simple: simpleMode,
         destination: destinationUrl.split('/').slice(0, 3).join('/') + '/***'
       })
     };
@@ -208,6 +318,7 @@ module.exports = {
   handler,
   convertJsonToYaml,
   createSlackPayload,
+  formatYamlForSlack,
   isValidWebhookUrl,
   isJsonString
 };
