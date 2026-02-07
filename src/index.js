@@ -1,7 +1,7 @@
-const { handler } = require('./handler');
+const { handler } = require("./handler");
 
 /**
- * AWS Lambda エントリーポイント
+ * AWS Lambda entry point
  * @param {object} event - API Gateway event
  * @param {object} context - Lambda context
  * @returns {Promise<object>} Response

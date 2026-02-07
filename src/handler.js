@@ -1,9 +1,9 @@
-const yaml = require('js-yaml');
+const yaml = require("js-yaml");
 
 /**
- * JSON文字列をYAMLに変換
- * @param {string} jsonString - JSON文字列
- * @returns {string} YAML文字列
+ * Convert JSON string to YAML
+ * @param {string} jsonString - JSON string
+ * @returns {string} YAML string
  */
 function convertJsonToYaml(jsonString) {
   try {
@@ -11,7 +11,7 @@ function convertJsonToYaml(jsonString) {
     return yaml.dump(jsonObj, {
       indent: 2,
       lineWidth: 120,
-      noRefs: true
+      noRefs: true,
     });
   } catch (error) {
     throw new Error(`JSON parse error: ${error.message}`);
@@ -19,84 +19,84 @@ function convertJsonToYaml(jsonString) {
 }
 
 /**
- * YAMLを見やすくフォーマット（Slack用）
- * @param {string} yamlContent - YAML文字列
- * @returns {string} フォーマット済みYAML
+ * Format YAML for better readability (for Slack)
+ * @param {string} yamlContent - YAML string
+ * @returns {string} Formatted YAML
  */
 function formatYamlForSlack(yamlContent) {
-  const lines = yamlContent.split('\n');
-  let inHeredoc = false; // ヒアドキュメント内かどうかのフラグ
-  let heredocIndent = 0; // ヒアドキュメントの基準インデント
+  const lines = yamlContent.split("\n");
+  let inHeredoc = false; // Flag to track if we're inside heredoc
+  let heredocIndent = 0; // Base indentation for heredoc
 
   const formatted = lines.map((line, index) => {
-    // 空行はそのまま
-    if (line.trim() === '') {
+    // Return empty lines as-is
+    if (line.trim() === "") {
       return line;
     }
 
     const currentIndent = line.match(/^(\s*)/)[1].length;
 
-    // ヒアドキュメント内の処理
+    // Process heredoc content
     if (inHeredoc) {
-      // ヒアドキュメント内の行は、基準インデントより深いインデントを持つ
+      // Lines inside heredoc have deeper indentation than base
       if (currentIndent > heredocIndent) {
-        // ヒアドキュメント内の行はそのまま返す（ハイライトしない）
+        // Return heredoc lines as-is (no highlighting)
         return line;
       } else {
-        // インデントが戻った = ヒアドキュメント終了
+        // Indentation decreased = end of heredoc
         inHeredoc = false;
         heredocIndent = 0;
-        // この行は通常の処理へ進む
+        // Process this line as normal
       }
     }
 
-    // ヒアドキュメントの開始を検出
-    // |, |-, |+, >, >-, >+ などで始まる行はヒアドキュメントの開始
+    // Detect start of heredoc
+    // Lines starting with |, |-, |+, >, >-, >+ are heredoc starts
     if (line.match(/^\s*[\w'_-]+:\s*[|>][-+]?\s*$/)) {
       inHeredoc = true;
       heredocIndent = currentIndent;
-      // キー部分だけを太字にする
-      return line.replace(/^(\s*)([\w'_-]+)(:\s*[|>][-+]?\s*)$/, '$1*$2*$3');
+      // Make only the key part bold
+      return line.replace(/^(\s*)([\w'_-]+)(:\s*[|>][-+]?\s*)$/, "$1*$2*$3");
     }
 
-    // キー: 値 のパターンにマッチ
+    // Match key: value pattern
     const keyValueMatch = line.match(/^(\s*)([\w'_-]+):\s*(.*)$/);
     if (keyValueMatch) {
       const indent = keyValueMatch[1];
       const key = keyValueMatch[2];
       const value = keyValueMatch[3];
 
-      // 値がある場合は太字で強調
-      if (value && value !== '' && value !== 'null') {
+      // Highlight value in bold if present
+      if (value && value !== "" && value !== "null") {
         return `${indent}*${key}:* ${value}`;
       } else {
-        // 値がない場合（ネストの親）は太字のキーのみ
+        // For parent keys with no value, only make key bold
         return `${indent}*${key}:*`;
       }
     }
 
-    // リスト項目
+    // List items
     if (line.match(/^\s*-\s+/)) {
-      return line.replace(/^(\s*-\s+)(.+)$/, '$1`$2`');
+      return line.replace(/^(\s*-\s+)(.+)$/, "$1`$2`");
     }
 
     return line;
   });
 
-  return formatted.join('\n');
+  return formatted.join("\n");
 }
 
 /**
- * Slackのメッセージペイロードを作成
- * @param {string} content - 元のコンテンツ
- * @param {boolean} isJson - JSONかどうか
- * @param {boolean} simple - シンプルモード（シンタックスハイライトなし）
- * @returns {object} Slackペイロード
+ * Create Slack message payload
+ * @param {string} content - Original content
+ * @param {boolean} isJson - Whether content is JSON
+ * @param {boolean} simple - Simple mode (no syntax highlighting)
+ * @returns {object} Slack payload
  */
 function createSlackPayload(content, isJson = false, simple = false) {
   if (isJson) {
     const yamlContent = convertJsonToYaml(content);
-    // シンプルモード: コードブロックのみ
+    // Simple mode: code block only
     if (simple) {
       return {
         text: "Alert Notification",
@@ -105,15 +105,15 @@ function createSlackPayload(content, isJson = false, simple = false) {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: "```\n" + yamlContent + "```"
-            }
-          }
-        ]
+              text: "```\n" + yamlContent + "```",
+            },
+          },
+        ],
       };
     }
-    // 通常モード: スニペット風表示
+    // Normal mode: snippet-style display
     const formattedYaml = formatYamlForSlack(yamlContent);
-    // Attachmentでスニペット風に表示（色付きサイドバー + フォーマット）
+    // Display snippet-style with Attachment (color sidebar + formatting)
     return {
       text: "🚨 Alert Notification",
       attachments: [
@@ -125,53 +125,53 @@ function createSlackPayload(content, isJson = false, simple = false) {
               text: {
                 type: "plain_text",
                 text: "📋 Alert Details",
-                emoji: true
-              }
+                emoji: true,
+              },
             },
             {
               type: "section",
               text: {
                 type: "mrkdwn",
-                text: formattedYaml
-              }
+                text: formattedYaml,
+              },
             },
             {
-              type: "divider"
+              type: "divider",
             },
             {
               type: "context",
               elements: [
                 {
                   type: "mrkdwn",
-                  text: `📄 Format: YAML | ⏰ ${new Date().toISOString()}`
-                }
-              ]
-            }
-          ]
-        }
-      ]
+                  text: `📄 Format: YAML | ⏰ ${new Date().toISOString()}`,
+                },
+              ],
+            },
+          ],
+        },
+      ],
     };
   } else {
-    // プレーンテキストの場合
+    // For plain text
     return {
-      text: content
+      text: content,
     };
   }
 }
 
 /**
- * Slack Webhookへメッセージ送信
+ * Send message to Slack Webhook
  * @param {string} webhookUrl - Webhook URL
- * @param {object} payload - 送信ペイロード
- * @returns {Promise<object>} レスポンス
+ * @param {object} payload - Payload to send
+ * @returns {Promise<object>} Response
  */
 async function sendToSlack(webhookUrl, payload) {
   const response = await fetch(webhookUrl, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json'
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -181,39 +181,43 @@ async function sendToSlack(webhookUrl, payload) {
 
   return {
     statusCode: response.status,
-    body: await response.text()
+    body: await response.text(),
   };
 }
 
 /**
- * WebhookURLのバリデーション
- * @param {string} url - 検証するURL
+ * Validate Webhook URL
+ * @param {string} url - URL to validate
  * @returns {boolean}
  */
 function isValidWebhookUrl(url) {
   try {
     const parsedUrl = new URL(url);
-    // Slackのwebhook URLであることを確認
-    return parsedUrl.hostname.includes('slack.com') || 
-           parsedUrl.hostname.includes('hooks.slack.com');
+    // Verify it's a Slack webhook URL
+    return (
+      parsedUrl.hostname.includes("slack.com") ||
+      parsedUrl.hostname.includes("hooks.slack.com")
+    );
   } catch {
     return false;
   }
 }
 
 /**
- * リクエストボディがJSONかどうかを判定
- * @param {string} body - リクエストボディ
+ * Determine if request body is JSON
+ * @param {string} body - Request body
  * @returns {boolean}
  */
 function isJsonString(body) {
-  if (!body || typeof body !== 'string') {
+  if (!body || typeof body !== "string") {
     return false;
   }
-  
+
   const trimmed = body.trim();
-  if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
-      (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+  if (
+    (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+    (trimmed.startsWith("[") && trimmed.endsWith("]"))
+  ) {
     try {
       JSON.parse(trimmed);
       return true;
@@ -225,91 +229,94 @@ function isJsonString(body) {
 }
 
 /**
- * メインハンドラー
- * @param {object} event - イベントオブジェクト
- * @returns {Promise<object>} レスポンス
+ * Main handler
+ * @param {object} event - Event object
+ * @returns {Promise<object>} Response
  */
 async function handler(event) {
   try {
-    // クエリパラメータから宛先Webhook URLを取得
-    // Lambda Function URL と API Gateway の両方に対応
-    const destinationUrl = event.queryStringParameters?.d || 
-                          event.query?.d ||
-                          (event.rawQueryString && new URLSearchParams(event.rawQueryString).get('d'));
+    // Get destination webhook URL from query parameters
+    // Support both Lambda Function URL and API Gateway
+    const destinationUrl =
+      event.queryStringParameters?.d ||
+      event.query?.d ||
+      (event.rawQueryString &&
+        new URLSearchParams(event.rawQueryString).get("d"));
 
     if (!destinationUrl) {
       return {
         statusCode: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          error: 'Missing required parameter: d (destination webhook URL)'
-        })
+          error: "Missing required parameter: d (destination webhook URL)",
+        }),
       };
     }
 
-    // シンプルモードフラグを取得
-    const simpleMode = event.queryStringParameters?.simple === 'true' || 
-                       event.query?.simple === 'true' ||
-                       (event.rawQueryString && new URLSearchParams(event.rawQueryString).get('simple') === 'true');
+    // Get simple mode flag
+    const simpleMode =
+      event.queryStringParameters?.simple === "true" ||
+      event.query?.simple === "true" ||
+      (event.rawQueryString &&
+        new URLSearchParams(event.rawQueryString).get("simple") === "true");
 
-    // Webhook URLのバリデーション
+    // Validate webhook URL
     if (!isValidWebhookUrl(destinationUrl)) {
       return {
         statusCode: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          error: 'Invalid Slack webhook URL'
-        })
+          error: "Invalid Slack webhook URL",
+        }),
       };
     }
 
-    // リクエストボディを取得
+    // Get request body
     let body = event.body;
-    
-    // API GatewayのBase64エンコード対応
+
+    // Handle Base64 encoding from API Gateway
     if (event.isBase64Encoded && body) {
-      body = Buffer.from(body, 'base64').toString('utf-8');
+      body = Buffer.from(body, "base64").toString("utf-8");
     }
 
     if (!body) {
       return {
         statusCode: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          error: 'Missing request body'
-        })
+          error: "Missing request body",
+        }),
       };
     }
 
-    // JSONかどうかを判定
+    // Determine if content is JSON
     const isJson = isJsonString(body);
 
-    // Slackペイロードを作成
+    // Create Slack payload
     const slackPayload = createSlackPayload(body, isJson, simpleMode);
 
-    // Slackへ送信
+    // Send to Slack
     const result = await sendToSlack(destinationUrl, slackPayload);
 
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        message: 'Successfully sent to Slack',
+        message: "Successfully sent to Slack",
         converted: isJson,
         simple: simpleMode,
-        destination: destinationUrl.split('/').slice(0, 3).join('/') + '/***'
-      })
+        destination: destinationUrl.split("/").slice(0, 3).join("/") + "/***",
+      }),
     };
-
   } catch (error) {
-    console.error('Error:', error);
+    console.error("Error:", error);
     return {
       statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        error: 'Internal server error',
-        message: error.message
-      })
+        error: "Internal server error",
+        message: error.message,
+      }),
     };
   }
 }
@@ -320,5 +327,5 @@ module.exports = {
   createSlackPayload,
   formatYamlForSlack,
   isValidWebhookUrl,
-  isJsonString
+  isJsonString,
 };
