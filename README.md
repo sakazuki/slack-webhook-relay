@@ -168,16 +168,16 @@ POST /webhooks
 
 ### Query Parameters
 
-| Parameter | Required | Description                          | Example                                        |
-| --------- | -------- | ------------------------------------ | ---------------------------------------------- |
-| d         | ✓        | Destination Slack Webhook URL        | `https://hooks.slack.com/services/XXX/YYY/ZZZ` |
-| simple    | -        | `true` for simple mode (unformatted) | `true` or `false` (default)                    |
+| Parameter | Required | Description          | Example                                        |
+| --------- | -------- | -------------------- | ---------------------------------------------- |
+| d         | ✓        | Destination Slack Webhook URL | `https://hooks.slack.com/services/XXX/YYY/ZZZ` |
+| mode      | -        | Display mode         | `simple`, `block`, `attachments` (default: `block`) |
 
-**Simple Mode (`simple=true`)**:
+**Mode Description**:
 
-- Plain YAML without syntax highlighting displayed in code block
-- No color-coded sidebar or bold formatting
-- Lightweight and simple display
+- **`mode=simple`**: Plain YAML without syntax highlighting displayed in code block. No color-coded sidebar or bold formatting. Lightweight and simple display
+- **`mode=block`** (default): Formatted YAML displayed directly in blocks. Lightweight as it doesn't use attachments
+- **`mode=attachments`**: Snippet-style display with color-coded sidebar and bold formatting for high visibility
 
 ### Request Body
 
