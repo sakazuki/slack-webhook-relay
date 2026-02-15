@@ -90,14 +90,15 @@ function formatYamlForSlack(yamlContent) {
  * Create Slack message payload
  * @param {string} content - Original content
  * @param {boolean} isJson - Whether content is JSON
- * @param {boolean} simple - Simple mode (no syntax highlighting)
+ * @param {string} mode - Display mode: 'simple' (code block only), 'block' (blocks without attachment), 'attachments' (with color sidebar)
  * @returns {object} Slack payload
  */
-function createSlackPayload(content, isJson = false, simple = false) {
+function createSlackPayload(content, isJson = false, mode = "block") {
   if (isJson) {
     const yamlContent = convertJsonToYaml(content);
+
     // Simple mode: code block only
-    if (simple) {
+    if (mode === "simple") {
       return {
         text: "Alert Notification",
         blocks: [
@@ -111,43 +112,53 @@ function createSlackPayload(content, isJson = false, simple = false) {
         ],
       };
     }
-    // Normal mode: snippet-style display
+
     const formattedYaml = formatYamlForSlack(yamlContent);
-    // Display snippet-style with Attachment (color sidebar + formatting)
+    const blocks = [
+      {
+        type: "header",
+        text: {
+          type: "plain_text",
+          text: "📋 Alert Details",
+          emoji: true,
+        },
+      },
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: formattedYaml,
+        },
+      },
+      {
+        type: "divider",
+      },
+      {
+        type: "context",
+        elements: [
+          {
+            type: "mrkdwn",
+            text: `📄 Format: YAML | ⏰ ${new Date().toISOString()}`,
+          },
+        ],
+      },
+    ];
+
+    // Block mode: blocks without attachment (no color sidebar)
+    if (mode === "block") {
+      return {
+        text: "🚨 Alert Notification",
+        blocks: blocks,
+      };
+    }
+
+    // Attachments mode: snippet-style display with color sidebar
     return {
       text: "🚨 Alert Notification",
       attachments: [
         {
           color: "#ff6b6b",
-          blocks: [
-            {
-              type: "header",
-              text: {
-                type: "plain_text",
-                text: "📋 Alert Details",
-                emoji: true,
-              },
-            },
-            {
-              type: "section",
-              text: {
-                type: "mrkdwn",
-                text: formattedYaml,
-              },
-            },
-            {
-              type: "divider",
-            },
-            {
-              type: "context",
-              elements: [
-                {
-                  type: "mrkdwn",
-                  text: `📄 Format: YAML | ⏰ ${new Date().toISOString()}`,
-                },
-              ],
-            },
-          ],
+          blocks: blocks,
         },
       ],
     };
@@ -253,12 +264,14 @@ async function handler(event) {
       };
     }
 
-    // Get simple mode flag
-    const simpleMode =
-      event.queryStringParameters?.simple === "true" ||
-      event.query?.simple === "true" ||
+    // Get mode parameter (simple, block, attachments)
+    // Default is 'block'
+    const mode =
+      event.queryStringParameters?.mode ||
+      event.query?.mode ||
       (event.rawQueryString &&
-        new URLSearchParams(event.rawQueryString).get("simple") === "true");
+        new URLSearchParams(event.rawQueryString).get("mode")) ||
+      "block";
 
     // Validate webhook URL
     if (!isValidWebhookUrl(destinationUrl)) {
@@ -293,7 +306,7 @@ async function handler(event) {
     const isJson = isJsonString(body);
 
     // Create Slack payload
-    const slackPayload = createSlackPayload(body, isJson, simpleMode);
+    const slackPayload = createSlackPayload(body, isJson, mode);
 
     // Send to Slack
     const result = await sendToSlack(destinationUrl, slackPayload);
@@ -304,7 +317,7 @@ async function handler(event) {
       body: JSON.stringify({
         message: "Successfully sent to Slack",
         converted: isJson,
-        simple: simpleMode,
+        mode: mode,
         destination: destinationUrl.split("/").slice(0, 3).join("/") + "/***",
       }),
     };

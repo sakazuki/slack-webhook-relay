@@ -12,9 +12,10 @@ Slack Webhook通知用のJSON→YAML変換中継API。
 ## 特徴
 
 - **JSONをYAMLに自動変換**: アラート内容の可読性を向上
-- **2つの表示モード**:
-  - **通常モード**: 色付きサイドバー + 太字キーのスニペット風表示
-  - **シンプルモード**: フォーマットなしのプレーンYAML
+- **3つの表示モード**:
+  - **block モード（デフォルト）**: 太字キーのフォーマット表示（Attachment なし）
+  - **attachments モード**: 色付きサイドバー + 太字キーのスニペット風表示
+  - **simple モード**: フォーマットなしのプレーンYAML
 - **複数Webhook対応**: クエリパラメータで送信先を動的に指定
 - **マルチクラウド**: AWS LambdaとOCI Functionsの両方にデプロイ可能
 - **Infrastructure as Code**: Terraformで完全自動化
@@ -26,7 +27,7 @@ SlackのIncoming WebhookのWebhook URLを、クエリーパラメター`d`の値
 
 ### 基本的な使用例
 
-**通常モード（スニペット風表示）:**
+**block モード（デフォルト）:**
 
 ```bash
 curl -X POST "https://api.example.com/?d=https://hooks.slack.com/services/YOUR/WEBHOOK/PATH" \
@@ -35,21 +36,36 @@ curl -X POST "https://api.example.com/?d=https://hooks.slack.com/services/YOUR/W
     "alert": "High CPU Usage",
     "severity": "warning",
     "host": "web-server-01",
-    "cpu_usage": 85.3,
+    "value": 85.3,
     "timestamp": "2025-02-07T10:30:00Z"
   }'
 ```
 
-**シンプルモード（フォーマットなし）:**
+**attachments モード（スニペット風表示）:**
 
 ```bash
-curl -X POST "https://api.example.com/?d=https://hooks.slack.com/services/YOUR/WEBHOOK/PATH&simple=true" \
+curl -X POST "https://api.example.com/?d=https://hooks.slack.com/services/YOUR/WEBHOOK/PATH&mode=attachments" \
   -H "Content-Type: application/json" \
   -d '{
     "alert": "High CPU Usage",
     "severity": "warning",
     "host": "web-server-01",
-    "cpu_usage": 85.3
+    "value": 85.3,
+    "timestamp": "2025-02-07T10:30:00Z"
+  }'
+```
+
+**simple モード（フォーマットなし）:**
+
+```bash
+curl -X POST "https://api.example.com/?d=https://hooks.slack.com/services/YOUR/WEBHOOK/PATH&mode=simple" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "alert": "High CPU Usage",
+    "severity": "warning",
+    "host": "web-server-01",
+    "value": 85.3,
+    "timestamp": "2025-02-07T10:30:00Z"
   }'
 ```
 
@@ -59,17 +75,23 @@ curl -X POST "https://api.example.com/?d=https://hooks.slack.com/services/YOUR/W
 
 - レイアウトされておらず読むのが難しい
 
-  ![alt text](docs/image-default.png)
+  ![normal](docs/image-normal.png)
 
-**変換後 - 通常モード (スニペット風表示)**
+**変換後 - block モード（デフォルト）**
 
-- 通常モード: Attachmentを使ったスニペット風の表示により、キーが太字で強調され、色付きサイドバーで視認性が向上
+- フォーマット表示されたYAML（Attachment なし）
 
-  ![default](docs/image-rich.png)
+  ![block](docs/image-block.png)
 
-**変換後 - シンプルモード (`simple=true`)**
+**変換後 - attachments モード（スニペット風表示）**
 
-- シンプルモード: プレーンなYAMLをコードブロックで表示、装飾なし
+- Attachmentを使ったスニペット風の表示により、キーが太字で強調され、色付きサイドバーで視認性が向上(削除できる点に留意)
+
+  ![attachments](docs/image-attachments.png)
+
+**変換後 - simple モード**
+
+- プレーンなYAMLをコードブロックで表示、装飾なし
 
   ![simple](docs/image-simple.png)
 
@@ -146,16 +168,16 @@ POST /webhooks
 
 ### クエリパラメータ
 
-| パラメータ | 必須 | 説明                                       | 例                                             |
-| ---------- | ---- | ------------------------------------------ | ---------------------------------------------- |
-| d          | ✓    | 送信先のSlack Webhook URL                  | `https://hooks.slack.com/services/XXX/YYY/ZZZ` |
-| simple     | -    | `true`でシンプルモード（フォーマットなし） | `true` または `false`（デフォルト）            |
+| パラメータ | 必須 | 説明                      | 例                                                     |
+| ---------- | ---- | ------------------------- | ------------------------------------------------------ |
+| d          | ✓    | 送信先のSlack Webhook URL | `https://hooks.slack.com/services/XXX/YYY/ZZZ`         |
+| mode       | -    | 表示モードの指定          | `simple`, `block`, `attachments` (デフォルト: `block`) |
 
-**シンプルモード (`simple=true`)**:
+**モード説明**:
 
-- シンタックスハイライトなしのプレーンなYAMLをコードブロックで送信
-- 色付きサイドバーや太字フォーマットなし
-- 軽量でシンプルな表示
+- **`mode=simple`**: シンタックスハイライトなしのプレーンなYAMLをコードブロックで送信。色付きサイドバーや太字フォーマットなし。軽量でシンプルな表示
+- **`mode=block`** (デフォルト): フォーマット表示されたYAMLを blocks で直接表示。Attachment を使わないため軽量
+- **`mode=attachments`**: 色付きサイドバー付きスニペット風表示。太字フォーマットで視認性が高い
 
 ### リクエストボディ
 

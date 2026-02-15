@@ -12,9 +12,10 @@ Converts JSON payloads from alert notifications into a readable YAML format and 
 ## Features
 
 - **Automatic JSON to YAML Conversion**: Improves readability of alert contents
-- **Two Display Modes**:
-  - **Normal Mode**: Color-coded sidebar + bold key snippet-style display
-  - **Simple Mode**: Plain YAML without formatting
+- **Three Display Modes**:
+  - **block Mode (Default)**: Formatted display with bold keys (no attachment)
+  - **attachments Mode**: Color-coded sidebar + bold key snippet-style display
+  - **simple Mode**: Plain YAML without formatting
 - **Multiple Webhook Support**: Dynamically specify destinations via query parameters
 - **Multi-Cloud**: Deployable to both AWS Lambda and OCI Functions
 - **Infrastructure as Code**: Fully automated with Terraform
@@ -26,7 +27,7 @@ Simply call the API with your Slack Incoming Webhook URL as the value of the que
 
 ### Basic Examples
 
-**Normal Mode (Snippet-style display):**
+**block Mode (Default):**
 
 ```bash
 curl -X POST "https://api.example.com/?d=https://hooks.slack.com/services/YOUR/WEBHOOK/PATH" \
@@ -35,21 +36,36 @@ curl -X POST "https://api.example.com/?d=https://hooks.slack.com/services/YOUR/W
     "alert": "High CPU Usage",
     "severity": "warning",
     "host": "web-server-01",
-    "cpu_usage": 85.3,
+    "value": 85.3,
     "timestamp": "2025-02-07T10:30:00Z"
   }'
 ```
 
-**Simple Mode (Unformatted):**
+**attachments Mode (Snippet-style display):**
 
 ```bash
-curl -X POST "https://api.example.com/?d=https://hooks.slack.com/services/YOUR/WEBHOOK/PATH&simple=true" \
+curl -X POST "https://api.example.com/?d=https://hooks.slack.com/services/YOUR/WEBHOOK/PATH&mode=attachments" \
   -H "Content-Type: application/json" \
   -d '{
     "alert": "High CPU Usage",
     "severity": "warning",
     "host": "web-server-01",
-    "cpu_usage": 85.3
+    "value": 85.3,
+    "timestamp": "2025-02-07T10:30:00Z"
+  }'
+```
+
+**simple Mode (Unformatted):**
+
+```bash
+curl -X POST "https://api.example.com/?d=https://hooks.slack.com/services/YOUR/WEBHOOK/PATH&mode=simple" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "alert": "High CPU Usage",
+    "severity": "warning",
+    "host": "web-server-01",
+    "value": 85.3,
+    "timestamp": "2025-02-07T10:30:00Z"
   }'
 ```
 
@@ -59,17 +75,23 @@ curl -X POST "https://api.example.com/?d=https://hooks.slack.com/services/YOUR/W
 
 - Unformatted and difficult to read
 
-  ![alt text](docs/image-default.png)
+  ![normal](docs/image-normal.png)
 
-**After Conversion - Normal Mode (Snippet-style display)**
+**After Conversion - block Mode (Default)**
 
-- Normal Mode: Snippet-style display using Attachments with bold keys and color-coded sidebar for improved visibility
+- Formatted YAML display with bold keys (no attachment)
 
-  ![default](docs/image-rich.png)
+  ![block](docs/image-block.png)
 
-**After Conversion - Simple Mode (`simple=true`)**
+**After Conversion - attachments Mode (Snippet-style display)**
 
-- Simple Mode: Plain YAML displayed in code block without decoration
+- Snippet-style display using Attachments with bold keys and color-coded sidebar for improved visibility (note: can be removed if needed)
+
+  ![attachments](docs/image-attachments.png)
+
+**After Conversion - simple Mode**
+
+- Plain YAML displayed in code block without decoration
 
   ![simple](docs/image-simple.png)
 
